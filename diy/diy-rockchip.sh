@@ -188,7 +188,7 @@ curl -s https://raw.githubusercontent.com/oppen321/OpenWrt-Patch/refs/heads/kern
 
 # 加入作者信息
 sed -i "s/DISTRIB_DESCRIPTION='*.*'/DISTRIB_DESCRIPTION='ZeroWrt-$(date +%Y%m%d)'/g"  package/base-files/files/etc/openwrt_release
-sed -i "s/DISTRIB_REVISION='*.*'/DISTRIB_REVISION=' By OPPEN321'/g" package/base-files/files/etc/openwrt_release
+sed -i "s/DISTRIB_REVISION='*.*'/DISTRIB_REVISION=' By ZeroWrt'/g" package/base-files/files/etc/openwrt_release
 
 # 主题设置
 sed -i 's/bing/none/' package/openwrt-package/luci-app-argon-config/root/etc/config/argon
