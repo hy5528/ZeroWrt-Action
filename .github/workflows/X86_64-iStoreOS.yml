@@ -1,7 +1,7 @@
 name: X86_64-iStoreOS
 
 on:
-   repository_dispatch:
+  repository_dispatch:
   workflow_dispatch:
     inputs:
       lan_ip:
