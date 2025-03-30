@@ -12,11 +12,6 @@ on:
         description: '设置系统名称'
         required: true
         default: 'iStoreOS'
-      enable_wifi:
-        description: '启用WiFi'
-        required: false
-        default: false
-        type: boolean
   schedule:
    - cron: 0 16 * * *
 
@@ -150,12 +145,6 @@ jobs:
         sed -i "s/OpenWrt/${set_os_name}/g" package/base-files/files/bin/config_generate
         echo "Set OS name : ${set_os_name}"
 
-    - name: 启用WiFi
-      if: github.event.inputs.enable_wifi == 'true'
-      run: |
-        cd openwrt
-        sed -i 's/disabled=1/disabled=0/g' package/kernel/mac80211/files/lib/wifi/mac80211.sh
-
     - name: Download DL Package
       run: |
         cd $OPENWRT_PATH
@@ -220,7 +209,7 @@ jobs:
           - ⚽ 固件源码: ${{ env.REPO_URL }}
           - 💝 源码分支: ${{ env.REPO_BRANCH }}
           - 🚀 内核版本: ${{ env.KERNEL }}
-          - 🌐 默认地址: 10.0.0.1
+          - 🌐 默认地址: 192.168.3.108
           - 🔑 默认密码: password
           ### 🧊 固件版本
           - 固件编译前最后一次➦[主源码](${{ env.REPO_URL }})更新记录
