@@ -1,10 +1,24 @@
 name: X86_64-iStoreOS
 
 on:
+   repository_dispatch:
   workflow_dispatch:
-# 定时触发编译
+    inputs:
+      lan_ip:
+        description: '设置LAN IP地址'
+        required: true
+        default: '192.168.3.108'
+      os_name:
+        description: '设置系统名称'
+        required: true
+        default: 'iStoreOS'
+      enable_wifi:
+        description: '启用WiFi'
+        required: false
+        default: false
+        type: boolean
   schedule:
-    - cron: 1 18 * * 4
+   - cron: 0 16 * * *
 
 env:
   REPO_URL: https://github.com/istoreos/istoreos
@@ -120,7 +134,28 @@ jobs:
         $GITHUB_WORKSPACE/$DIY_SCRIPT
         $GITHUB_WORKSPACE/scripts/iStoreOS.sh
 #       $GITHUB_WORKSPACE/scripts/preset-clash-core.sh $CLASH_KERNEL
-        
+
+    - name: 设置LAN IP地址（路由器登录地址）
+      run: |
+        cd openwrt
+        SET_IP=${{ github.event.inputs.lan_ip }}
+        #修改默认IP地址
+        sed -i "s/192\.168\.[0-9]*\.[0-9]*/$SET_IP/g" package/base-files/files/bin/config_generate
+        echo "Set LAN IP Address: $SET_IP"
+
+    - name: 设置系统名称
+      run: |
+        cd openwrt
+        set_os_name=${{ github.event.inputs.os_name }}
+        sed -i "s/OpenWrt/${set_os_name}/g" package/base-files/files/bin/config_generate
+        echo "Set OS name : ${set_os_name}"
+
+    - name: 启用WiFi
+      if: github.event.inputs.enable_wifi == 'true'
+      run: |
+        cd openwrt
+        sed -i 's/disabled=1/disabled=0/g' package/kernel/mac80211/files/lib/wifi/mac80211.sh
+
     - name: Download DL Package
       run: |
         cd $OPENWRT_PATH
