@@ -11,7 +11,7 @@
 #
 
 # 修改openwrt登陆地址,把下面的 192.168.10.1 修改成你想要的就可以了
-sed -i 's/192.168.1.1/192.168.3.108/g' package/base-files/files/bin/config_generate
+# sed -i 's/192.168.1.1/192.168.3.108/g' package/base-files/files/bin/config_generate
 
 # 修改子网掩码
 # sed -i 's/255.255.255.0/255.255.0.0/g' package/base-files/files/bin/config_generate
@@ -30,7 +30,7 @@ curl -so files/root/.bash_profile https://git.kejizero.online/zhao/files/raw/bra
 curl -so files/root/.bashrc https://git.kejizero.online/zhao/files/raw/branch/main/root/.bashrc
 
 # 默认打开WiFi
-sed -i 's/disabled=1/disabled=0/g' package/kernel/mac80211/files/lib/wifi/mac80211.sh
+# sed -i 's/disabled=1/disabled=0/g' package/kernel/mac80211/files/lib/wifi/mac80211.sh
 
 ##加入作者信息
 sed -i "s/DISTRIB_DESCRIPTION='*.*'/DISTRIB_DESCRIPTION='ZeroWrt-$(date +%Y%m%d)'/g"  package/base-files/files/etc/openwrt_release
