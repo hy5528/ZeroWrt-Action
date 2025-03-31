@@ -136,6 +136,12 @@ git clone --depth=1 -b helloworld https://github.com/oppen321/openwrt-package pa
 # 加载软件源
 git clone --depth=1 https://github.com/oppen321/openwrt-package package/openwrt-package
 
+# 添加第三方应用
+mkdir kiddin9
+pushd kiddin9
+git clone --depth=1 https://github.com/kiddin9/kwrt-packages .
+popd
+
 # Docker
 rm -rf feeds/luci/applications/luci-app-dockerman
 git clone https://git.kejizero.online/zhao/luci-app-dockerman feeds/luci/applications/luci-app-dockerman
