@@ -134,7 +134,7 @@ git clone --depth=1 -b 24.x https://github.com/sbwml/packages_lang_golang feeds/
 git clone --depth=1 -b helloworld https://github.com/oppen321/openwrt-package package/helloworld
 
 # 加载软件源
-git clone --depth=1 https://github.com/kiddin9/kwrt-packages package/kwrt-packages
+git clone --depth=1 https://github.com/oppen321/openwrt-package package/openwrt-package
 
 
 
