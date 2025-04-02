@@ -131,7 +131,10 @@ rm -rf feeds/packages/net/{alist,zerotier,xray-core,v2ray-core,v2ray-geodata,sin
 git clone --depth=1 -b 24.x https://github.com/sbwml/packages_lang_golang feeds/packages/lang/golang
 
 # helloworld
-git clone --depth=1 -b helloworld https://github.com/oppen321/openwrt-package package/helloworld
+# git clone --depth=1 -b helloworld https://github.com/oppen321/openwrt-package package/helloworld
+
+# quickstart插件
+git clone --depth=1 https://github.com/kiddin9/kwrt-packages/tree/main/luci-app-quickstart package/luci-app-quickstart
 
 # 加载软件源
 git clone --depth=1 https://github.com/oppen321/openwrt-package package/openwrt-package
