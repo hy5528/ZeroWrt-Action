@@ -133,8 +133,6 @@ git clone --depth=1 -b 24.x https://github.com/sbwml/packages_lang_golang feeds/
 # helloworld
 git clone --depth=1 -b helloworld https://github.com/oppen321/openwrt-package package/helloworld
 
-# 加载软件源
-git clone --depth=1 https://github.com/oppen321/openwrt-package package/openwrt-package
 
 # 添加第三方应用
 mkdir kiddin9
