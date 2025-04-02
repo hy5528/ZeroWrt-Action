@@ -81,6 +81,9 @@ sed -i "s?/bin/login?/usr/libexec/login.sh?g" ${GITHUB_WORKSPACE}/openwrt/packag
 # 移除 bootstrap 主题
 sed -i 's/CONFIG_PACKAGE_luci-theme-bootstrap=y/CONFIG_PACKAGE_luci-theme-bootstrap=n/' .config
 
+# 添加第三方软件源
+git clone --depth=1 https://github.com/kiddin9/kwrt-packages package/openwrt-package
+
 # 添加第三方应用
 mkdir kiddin9
 pushd kiddin9
