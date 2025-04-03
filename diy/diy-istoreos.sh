@@ -84,10 +84,6 @@ sed -i 's/CONFIG_PACKAGE_luci-theme-bootstrap=y/CONFIG_PACKAGE_luci-theme-bootst
 # 添加第三方软件源
 git clone --depth=1 https://github.com/oppen321/openwrt-package package/openwrt-package
 
-# 近期istoreos网站文件服务器不稳定，临时增加一个自定义下载网址
-sed -i "s/push @mirrors, 'https:\/\/mirror2.openwrt.org\/sources';/&\\npush @mirrors, 'https:\/\/github.com\/xiaomeng9597\/files\/releases\/download\/iStoreosFile';/g" scripts/download.pl
-
-
 # mkdir Modem-Support
 # pushd Modem-Support
 # git clone --depth=1 https://github.com/Siriling/5G-Modem-Support .
