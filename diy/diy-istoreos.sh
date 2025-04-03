@@ -1,471 +1,111 @@
 #!/bin/bash
-#
-# Copyright (c) 2019-2020 P3TERX <https://p3terx.com>
-#
-# This is free software, licensed under the MIT License.
-# See /LICENSE for more information.
-#
-# https://github.com/P3TERX/Actions-OpenWrt
-# File name: diy-part2.sh
-# Description: OpenWrt DIY script part 2 (After Update feeds)
-#
 
-# 修改openwrt登陆地址,把下面的 192.168.10.1 修改成你想要的就可以了
-# sed -i 's/192.168.1.1/192.168.3.108/g' package/base-files/files/bin/config_generate
+# 修改默认IP
+sed -i 's/192.168.1.1/192.168.3.108/g' package/base-files/files/bin/config_generate
 
-# 修改子网掩码
-# sed -i 's/255.255.255.0/255.255.0.0/g' package/base-files/files/bin/config_generate
+# 更改 Argon 主题背景
+cp -f $GITHUB_WORKSPACE/images/bg1.jpg feeds/third/luci-theme-argon/htdocs/luci-static/argon/img/bg1.jpg
 
-# 修改主机名字，把 iStore OS 修改你喜欢的就行（不能纯数字或者使用中文）
-sed -i 's/OpenWrt/iStore OS/g' package/base-files/files/bin/config_generate
+# profile
+sed -i 's#\\u@\\h:\\w\\\$#\\[\\e[32;1m\\][\\u@\\h\\[\\e[0m\\] \\[\\033[01;34m\\]\\W\\[\\033[00m\\]\\[\\e[32;1m\\]]\\[\\e[0m\\]\\\$#g' package/base-files/files/etc/profile
+sed -ri 's/(export PATH=")[^"]*/\1%PATH%:\/opt\/bin:\/opt\/sbin:\/opt\/usr\/bin:\/opt\/usr\/sbin/' package/base-files/files/etc/profile
+sed -i '/PS1/a\export TERM=xterm-color' package/base-files/files/etc/profile
 
-# ttyd自动登录
-sed -i "s?/bin/login?/usr/libexec/login.sh?g" ${GITHUB_WORKSPACE}/openwrt/package/feeds/packages/ttyd/files/ttyd.config
+# TTYD
+sed -i 's/services/system/g' feeds/luci/applications/luci-app-ttyd/root/usr/share/luci/menu.d/luci-app-ttyd.json
+sed -i '3 a\\t\t"order": 50,' feeds/luci/applications/luci-app-ttyd/root/usr/share/luci/menu.d/luci-app-ttyd.json
+sed -i 's/procd_set_param stdout 1/procd_set_param stdout 0/g' feeds/packages/utils/ttyd/files/ttyd.init
+sed -i 's/procd_set_param stderr 1/procd_set_param stderr 0/g' feeds/packages/utils/ttyd/files/ttyd.init
 
 
-# 默认打开WiFi
-# sed -i 's/disabled=1/disabled=0/g' package/kernel/mac80211/files/lib/wifi/mac80211.sh
+# Nginx
+sed -i "s/large_client_header_buffers 2 1k/large_client_header_buffers 4 32k/g" feeds/packages/net/nginx-util/files/uci.conf.template
+sed -i "s/client_max_body_size 128M/client_max_body_size 2048M/g" feeds/packages/net/nginx-util/files/uci.conf.template
+sed -i '/client_max_body_size/a\\tclient_body_buffer_size 8192M;' feeds/packages/net/nginx-util/files/uci.conf.template
+sed -i '/client_max_body_size/a\\tserver_names_hash_bucket_size 128;' feeds/packages/net/nginx-util/files/uci.conf.template
+sed -i '/ubus_parallel_req/a\        ubus_script_timeout 600;' feeds/packages/net/nginx/files-luci-support/60_nginx-luci-support
+sed -ri "/luci-webui.socket/i\ \t\tuwsgi_send_timeout 600\;\n\t\tuwsgi_connect_timeout 600\;\n\t\tuwsgi_read_timeout 600\;" feeds/packages/net/nginx/files-luci-support/luci.locations
+sed -ri "/luci-cgi_io.socket/i\ \t\tuwsgi_send_timeout 600\;\n\t\tuwsgi_connect_timeout 600\;\n\t\tuwsgi_read_timeout 600\;" feeds/packages/net/nginx/files-luci-support/luci.locations
 
+# uwsgi
+sed -i 's,procd_set_param stderr 1,procd_set_param stderr 0,g' feeds/packages/net/uwsgi/files/uwsgi.init
+sed -i 's,buffer-size = 10000,buffer-size = 131072,g' feeds/packages/net/uwsgi/files-luci-support/luci-webui.ini
+sed -i 's,logger = luci,#logger = luci,g' feeds/packages/net/uwsgi/files-luci-support/luci-webui.ini
+sed -i '$a cgi-timeout = 600' feeds/packages/net/uwsgi/files-luci-support/luci-*.ini
+sed -i 's/threads = 1/threads = 2/g' feeds/packages/net/uwsgi/files-luci-support/luci-webui.ini
+sed -i 's/processes = 3/processes = 4/g' feeds/packages/net/uwsgi/files-luci-support/luci-webui.ini
+sed -i 's/cheaper = 1/cheaper = 2/g' feeds/packages/net/uwsgi/files-luci-support/luci-webui.ini
 
-# 移除ddns
-# sed -i 's/CONFIG_PACKAGE_ddns-scripts=y/CONFIG_PACKAGE_ddns-scripts=n/' .config
-# sed -i 's/CONFIG_PACKAGE_ddns-scripts-cloudflare=y/CONFIG_PACKAGE_ddns-scripts-cloudflare=n/' .config
-# sed -i 's/CONFIG_PACKAGE_ddns-scripts-dnspod=y/CONFIG_PACKAGE_ddns-scripts-dnspod=n/' .config
-# sed -i 's/CONFIG_PACKAGE_ddns-scripts-services=y/CONFIG_PACKAGE_ddns-scripts-services=n/' .config
-# sed -i 's/CONFIG_PACKAGE_ddns-scripts_aliyun=y/CONFIG_PACKAGE_ddns-scripts_aliyun=n/' .config
-# sed -i 's/CONFIG_PACKAGE_luci-app-ddns=y/CONFIG_PACKAGE_luci-app-ddns=n/' .config
-# sed -i 's/CONFIG_PACKAGE_luci-i18n-ddns-zh-cn=y/CONFIG_PACKAGE_luci-i18n-ddns-zh-cn=n/' .config
-# 移除ddnsto
-# sed -i 's/CONFIG_PACKAGE_ddnsto=y/CONFIG_PACKAGE_ddnsto=n/' .config
-# sed -i 's/CONFIG_PACKAGE_luci-app-ddnsto=y/CONFIG_PACKAGE_luci-app-ddnsto=n/' .config
-# sed -i 's/CONFIG_PACKAGE_luci-i18n-ddnsto-zh-cn=y/CONFIG_PACKAGE_luci-i18n-ddnsto-zh-cn=n/' .config
+# rpcd
+sed -i 's/option timeout 30/option timeout 60/g' package/system/rpcd/files/rpcd.config
+sed -i 's#20) \* 1000#60) \* 1000#g' feeds/luci/modules/luci-base/htdocs/luci-static/resources/rpc.js
 
-# 移除网卡驱动
-# sed -i 's/CONFIG_PACKAGE_kmod-ath=y/CONFIG_PACKAGE_kmod-ath=n/' .config
-# sed -i 's/CONFIG_PACKAGE_kmod-ath10k=y/CONFIG_PACKAGE_kmod-ath10k=n/' .config
-# sed -i 's/CONFIG_PACKAGE_ath10k-board-qca9888=y/CONFIG_PACKAGE_ath10k-board-qca9888=n/' .config
-# sed -i 's/CONFIG_PACKAGE_ath10k-board-qca988x=y/CONFIG_PACKAGE_ath10k-board-qca988x=n/' .config
-# sed -i 's/CONFIG_PACKAGE_ath10k-board-qca9984=y/CONFIG_PACKAGE_ath10k-board-qca9984=n/' .config   
-# sed -i 's/CONFIG_PACKAGE_ath10k-firmware-qca9888=y/CONFIG_PACKAGE_ath10k-firmware-qca9888=n/' .config
-# sed -i 's/CONFIG_PACKAGE_ath10k-firmware-qca988x=y/CONFIG_PACKAGE_ath10k-firmware-qca988x=n/' .config
-# sed -i 's/CONFIG_PACKAGE_ath10k-firmware-qca9984=y/CONFIG_PACKAGE_ath10k-firmware-qca9984=n/' .config
+# mwan3
+# sed -i 's/MultiWAN 管理器/负载均衡/g' feeds/luci/applications/luci-app-mwan3/po/zh_Hans/mwan3.po
 
-# sed -i 's/CONFIG_PACKAGE_iw=y/CONFIG_PACKAGE_iw=n/' .config
-# sed -i 's/CONFIG_PACKAGE_iwinfo=y/CONFIG_PACKAGE_iwinfo=n/' .config  
-# sed -i 's/CONFIG_PACKAGE_kmod-iwlwifi=y/CONFIG_PACKAGE_kmod-iwlwifi=n/' .config
-# sed -i 's/CONFIG_PACKAGE_iwlwifi-firmware-ax101=y/CONFIG_PACKAGE_iwlwifi-firmware-ax101=n/' .config
-# sed -i 's/CONFIG_PACKAGE_iwlwifi-firmware-ax200=y/CONFIG_PACKAGE_iwlwifi-firmware-ax200=n/' .config
-# sed -i 's/CONFIG_PACKAGE_iwlwifi-firmware-ax201=y/CONFIG_PACKAGE_iwlwifi-firmware-ax201=n/' .config
-# sed -i 's/CONFIG_PACKAGE_iwlwifi-firmware-ax210=y/CONFIG_PACKAGE_iwlwifi-firmware-ax210=n/' .config
-# sed -i 's/CONFIG_PACKAGE_iwlwifi-firmware-ax211=y/CONFIG_PACKAGE_iwlwifi-firmware-ax211=n/' .config
+##加入作者信息
+sed -i "s/DISTRIB_DESCRIPTION='*.*'/DISTRIB_DESCRIPTION='ZeroWrt-$(date +%Y%m%d)'/g"  package/base-files/files/etc/openwrt_release
+sed -i "s/DISTRIB_REVISION='*.*'/DISTRIB_REVISION=' By ZeroWrt'/g" package/base-files/files/etc/openwrt_release
 
-# sed -i 's/CONFIG_PACKAGE_kmod-rtl8192c-common=y/CONFIG_PACKAGE_kmod-rtl8192c-common=n/' .config
-# sed -i 's/CONFIG_PACKAGE_kmod-rtl8192cu=y/CONFIG_PACKAGE_kmod-rtl8192cu=n/' .config
-# sed -i 's/CONFIG_PACKAGE_kmod-rtl8192de=y/CONFIG_PACKAGE_kmod-rtl8192de=n/' .config
-# sed -i 's/CONFIG_PACKAGE_kmod-rtl8192se=y/CONFIG_PACKAGE_kmod-rtl8192se=n/' .config
-# sed -i 's/CONFIG_PACKAGE_kmod-rtl8812au-ct=y/CONFIG_PACKAGE_kmod-rtl8812au-ct=n/' .config
-# sed -i 's/CONFIG_PACKAGE_kmod-rtl8821ae=y/CONFIG_PACKAGE_kmod-rtl8821ae=n/' .config
-# sed -i 's/CONFIG_PACKAGE_kmod-rtl8xxxu=y/CONFIG_PACKAGE_kmod-rtl8xxxu=n/' .config  
-# sed -i 's/CONFIG_PACKAGE_kmod-rtlwifi=y/CONFIG_PACKAGE_kmod-rtlwifi=n/' .config
-# sed -i 's/CONFIG_PACKAGE_kmod-rtlwifi-btcoexist=y/CONFIG_PACKAGE_kmod-rtlwifi-btcoexist=n/' .config
-# sed -i 's/CONFIG_PACKAGE_kmod-rtlwifi-pci=y/CONFIG_PACKAGE_kmod-rtlwifi-pci=n/' .config
-# sed -i 's/CONFIG_PACKAGE_kmod-rtlwifi-usb=y/CONFIG_PACKAGE_kmod-rtlwifi-usb=n/' .config
-# sed -i 's/CONFIG_PACKAGE_kmod-rtw88=y/CONFIG_PACKAGE_kmod-rtw88=n/' .config
+# 移除要替换的包
+rm -rf feeds/packages/net/{xray-core,v2ray-core,v2ray-geodata,sing-box,adguardhome,socat}
+rm -rf feeds/packages/net/alist feeds/luci/applications/luci-app-alist
+rm -rf feeds/packages/utils/v2dat
+rm -rf feeds/packages/lang/golang
 
-# # 移除 uhttpd
-# sed -i 's/CONFIG_PACKAGE_uhttpd=y/CONFIG_PACKAGE_uhttpd=n/' .config
-# sed -i 's/CONFIG_PACKAGE_uhttpd-mod-ubus=y/CONFIG_PACKAGE_uhttpd-mod-ubus=n/' .config
-# sed -i 's/CONFIG_PACKAGE_libiwinfo-lua=y/CONFIG_PACKAGE_libiwinfo-lua=n/' .config
-# sed -i 's/CONFIG_PACKAGE_luci-ssl-openssl=y/CONFIG_PACKAGE_luci-ssl-openssl=n/' .config
+# Git稀疏克隆，只克隆指定目录到本地
+function git_sparse_clone() {
+  branch="$1" repourl="$2" && shift 2
+  git clone --depth=1 -b $branch --single-branch --filter=blob:none --sparse $repourl
+  repodir=$(echo $repourl | awk -F '/' '{print $(NF)}')
+  cd $repodir && git sparse-checkout set $@
+  mv -f $@ ../package
+  cd .. && rm -rf $repodir
+}
 
-# 移除 bootstrap 主题
-sed -i 's/CONFIG_PACKAGE_luci-theme-bootstrap=y/CONFIG_PACKAGE_luci-theme-bootstrap=n/' .config
+# golong1.23依赖
+#git clone --depth=1 https://github.com/sbwml/packages_lang_golang -b 22.x feeds/packages/lang/golang
+git clone https://git.kejizero.online/zhao/packages_lang_golang -b 23.x feeds/packages/lang/golang
 
-# 添加第三方软件源
-git clone --depth=1 https://github.com/oppen321/openwrt-package package/openwrt-package
+# SSRP & Passwall
+# git clone https://git.kejizero.online/zhao/openwrt_helloworld.git package/helloworld -b v5
 
-# mkdir Modem-Support
-# pushd Modem-Support
-# git clone --depth=1 https://github.com/Siriling/5G-Modem-Support .
-# popd
+# Alist
+# git clone https://git.kejizero.online/zhao/luci-app-alist package/alist
 
-# mkdir MyConfig
-# pushd MyConfig
-# git clone --depth=1 https://github.com/Siriling/OpenWRT-MyConfig .
-# popd
+# Mosdns
+# git clone https://git.kejizero.online/zhao/luci-app-mosdns.git -b v5 package/mosdns
+# git clone https://git.kejizero.online/zhao/v2ray-geodata.git package/v2ray-geodata
 
-mkdir package/community
-pushd package/community
+# 锐捷认证
+# git clone https://github.com/sbwml/luci-app-mentohust package/mentohust
 
-# 系统相关应用
-#Cpufreq（conf已有）
-# svn export https://github.com/kiddin9/openwrt-packages/trunk/luci-app-cpufreq
-# svn export https://github.com/kiddin9/openwrt-packages/trunk/luci-lib-mac-vendor
-#Fan（conf已有）
-# svn export https://github.com/kiddin9/openwrt-packages/trunk/luci-app-fan
-#Poweroff（iStoreOS已有）
-# svn export https://github.com/kiddin9/openwrt-packages/trunk/luci-app-poweroff
-#Diskman（conf已有）
-# svn export https://github.com/kiddin9/openwrt-packages/trunk/luci-app-diskman
-#Fileassistant（iStoreOS已有）
-#svn export https://github.com/kiddin9/openwrt-packages/trunk/luci-app-fileassistant
-#Guest-wifi
-# svn export https://github.com/kiddin9/openwrt-packages/trunk/luci-app-guest-wifi
-# mkdir luci-app-guest-wifi
-# cp -rf ../../kiddin9/luci-app-guest-wifi/* luci-app-guest-wifi
-#Onliner
-mkdir luci-app-onliner
-cp -rf ../../kiddin9/luci-app-onliner/* luci-app-onliner
-#Eqos（iStoreOS已有）
-#svn export https://github.com/kiddin9/openwrt-packages/trunk/luci-app-eqos
-#Wolplus（已有Wol）
-# svn export https://github.com/kiddin9/openwrt-packages/trunk/luci-app-wolplus
-#WiFischedule
-# mkdir luci-app-wifischedule
-# cp -rf ../../kiddin9/luci-app-wifischedule/* luci-app-wifischedule
-#RAMfree
-mkdir luci-app-ramfree
-cp -rf ../../kiddin9/luci-app-ramfree/* luci-app-ramfree
-#ttyd（conf已有）
-# mkdir luci-app-ttyd
-# cp -rf ../kiddin9/luci-app-ttyd/* luci-app-ttyd
-#usb3disable（禁用USB3.0接口）
-# mkdir luci-app-usb3disable
-# cp -rf ../../kiddin9/luci-app-usb3disable/* luci-app-usb3disable
-#NetData（系统监控）
-mkdir luci-app-netdata
-cp -rf ../../kiddin9/luci-app-netdata/* luci-app-netdata
-#rtbwmon（实施流量）
-mkdir luci-app-rtbwmon
-cp -rf ../../kiddin9/luci-app-rtbwmon/* luci-app-rtbwmon
+# Adguardhome
+# git_sparse_clone master https://github.com/kenzok8/openwrt-packages adguardhome luci-app-adguardhome
 
-# 存储相关应用
-# Gowebdav（iStoreOS已有）
-# svn export https://github.com/immortalwrt/luci/trunk/applications/luci-app-gowebdav
+# default-settings
+git clone --depth=1 -b dev https://github.com/oppen321/default-settings package/default-settings
 
-# 科学上网和代理应用
-#SSR
-# svn export https://github.com/fw876/helloworld/trunk helloworld
-# svn export https://github.com/kiddin9/openwrt-packages/trunk/luci-app-ssr-plus
-# mkdir luci-app-ssr-plus
-# cp -rf ../../kiddin9/luci-app-ssr-plus/* luci-app-ssr-plus
-# cp -rf ../../kiddin9/dns2socks/* dns2socks
-# cp -rf ../../kiddin9/lua-neturl/* lua-neturl
-# cp -rf ../../kiddin9/microsocks/* microsocks
-# cp -rf ../../kiddin9/tcping/* tcping
-# cp -rf ../../kiddin9/shadowsocksr-libev/* shadowsocksr-libev
-# cp -rf ../../kiddin9/chinadns-ng/* chinadns-ng
-# cp -rf ../../kiddin9/mosdns/* mosdns
-# cp -rf ../../kiddin9/hysteria/* hysteria
-# cp -rf ../../kiddin9/tuic-client/* tuic-client
-# cp -rf ../../kiddin9/shadow-tls/* shadow-tls
-# cp -rf ../../kiddin9/ipt2socks/* ipt2socks
-# cp -rf ../../kiddin9/naiveproxy/* naiveproxy
-# cp -rf ../../kiddin9/redsocks2/* redsocks2
-# cp -rf ../../kiddin9/shadowsocks-rust/* shadowsocks-rust
-# cp -rf ../../kiddin9/simple-obfs/* simple-obfs
-# cp -rf ../../kiddin9/v2ray-plugin/* v2ray-plugin
-# cp -rf ../../kiddin9/trojan/* trojan
-#Passwall和Passwall2
-# svn export https://github.com/xiaorouji/openwrt-passwall/trunk openwrt-passwall
-# svn export https://github.com/xiaorouji/openwrt-passwall/branches/luci/luci-app-passwall
-# svn export https://github.com/xiaorouji/openwrt-passwall2/trunk/luci-app-passwall2
-#VSSR（Hello Word）
-# svn export https://github.com/jerrykuku/lua-maxminddb/trunk lua-maxminddb
-# svn export https://github.com/jerrykuku/luci-app-vssr/trunk luci-app-vssr
+# Lucky
+# git clone https://github.com/gdy666/luci-app-lucky.git package/lucky
 
-#homeproxy
-# mkdir luci-app-homeproxy
-# cp -rf ../../kiddin9/luci-app-homeproxy/* luci-app-homeproxy
+# luci-app-webdav
+git clone https://git.kejizero.online/zhao/luci-app-webdav package/new/luci-app-webdav
 
-# 去广告
-#ADGuardHome（kiddin9）
-# mkdir luci-app-adguardhome
-# cp -rf ../../kiddin9/luci-app-adguardhome/* luci-app-adguardhome
-# cp -rf ../../MyConfig/configs/istoreos/general/applications/luci-app-adguardhome/* luci-app-adguardhome
-# sed -i 's/拦截DNS服务器/拦截DNS服务器（默认用户名和密码均为root）/' luci-app-adguardhome/po/zh_Hans/adguardhome.po
-#sed -i 's/+PACKAGE_$(PKG_NAME)_INCLUDE_binary:adguardhome//' luci-app-adguardhome/Makefile
-#ADGuardHome（kenzok8）
-# svn export https://github.com/kenzok8/openwrt-packages/trunk/adguardhome
-# svn export https://github.com/kenzok8/openwrt-packages/trunk/luci-app-adguardhome
-# svn export https://github.com/Siriling/打开WRT-MyConfig/trunk/configs/lede/general/applications/luci-app-adguardhome temp/luci-app-adguardhome
-# cp -rf temp/luci-app-adguardhome/* luci-app-adguardhome
-# sed -i 's/默认账号和密码均为：admin/默认用户名和密码均为root/' luci-app-adguardhome/po/zh-cn/AdGuardHome.po
-# sed -i 's/网页管理账号和密码:admin ,端口:/端口/' luci-app-adguardhome/po/zh-cn/AdGuardHome.po
-#dnsfilter
-# svn export https://github.com/kenzok8/small-package/trunk/luci-app-dnsfilter
-#ikoolproxy
-# svn export https://github.com/kenzok8/small-package/trunk/luci-app-ikoolproxy
+# unzip
+rm -rf feeds/packages/utils/unzip
+git clone https://github.com/sbwml/feeds_packages_utils_unzip feeds/packages/utils/unzip
 
-# docker应用
-# svn export https://github.com/kenzok8/small-package/trunk/luci-app-filebrowser
-# rm -rf ../../customfeeds/luci/applications/luci-app-kodexplorer
-# svn export https://github.com/kenzok8/small-package/trunk/luci-app-kodexplorer
-# rm -rf ../../customfeeds/packages/utils/verysync
-# rm -rf ../../customfeeds/luci/applications/luci-app-verysync
-# svn export https://github.com/kenzok8/small-package/trunk/verysync
-# svn export https://github.com/kenzok8/small-package/trunk/luci-app-verysync
+# frpc名称
+sed -i 's,发送,Transmission,g' feeds/luci/applications/luci-app-transmission/po/zh_Hans/transmission.po
+sed -i 's,frp 服务器,FRP 服务器,g' feeds/luci/applications/luci-app-frps/po/zh_Hans/frps.po
+sed -i 's,frp 客户端,FRP 客户端,g' feeds/luci/applications/luci-app-frpc/po/zh_Hans/frpc.po
 
-# VPN服务器
-# svn export https://github.com/kenzok8/small-package/trunk/luci-app-ssr-mudb-server
-# svn export https://github.com/kenzok8/small-package/trunk/luci-app-ipsec-server
-# svn export https://github.com/kenzok8/small-package/trunk/luci-app-pptp-server
-# svn export https://github.com/kenzok8/small-package/trunk/luci-app-softethervpn
-
-# DNS
-# svn export https://github.com/kenzok8/small-package/trunk/mosdns
-# svn export https://github.com/kenzok8/small-package/trunk/luci-app-mosdns
-# svn export https://github.com/kenzok8/small-package/trunk/smartdns
-# svn export https://github.com/kenzok8/small-package/trunk/luci-app-smartdns
-
-#内网穿透
-#Zerotier（iStoreOS已有）
-# svn export https://github.com/kiddin9/openwrt-packages/trunk/luci-app-zerotier
-
-# 其他
-#Socat（iStoreOS已有）
-#svn export https://github.com/kiddin9/openwrt-packages/trunk/luci-app-socat
-#Unblockneteasemusic
-mkdir UnblockNeteaseMusic
-mkdir luci-app-unblockneteasemusic
-cp -rf ../../kiddin9/UnblockNeteaseMusic/* UnblockNeteaseMusic
-cp -rf ../../kiddin9/luci-app-unblockneteasemusic/* luci-app-unblockneteasemusic
-#OpenAppFilter（conf已有）
-# svn export https://github.com/destan19/OpenAppFilter/trunk OpenAppFilter
-
-# 5G通信模组拨号工具
-# mkdir quectel_QMI_WWAN
-# mkdir quectel_cm_5G
-# mkdir quectel_MHI
-# mkdir luci-app-hypermodem
-# cp -rf ../../Modem-Support/quectel_QMI_WWAN/* quectel_QMI_WWAN
-# cp -rf ../../Modem-Support/quectel_cm_5G/* quectel_cm_5G
-# cp -rf ../../Modem-Support/quectel_MHI/* quectel_MHI
-# cp -rf ../../Modem-Support/luci-app-hypermodem/* luci-app-hypermodem
-
-# 5G模组短信插件
-# cp -rf temp/luci-app-sms-tool/* luci-app-sms-tool
-# mkdir sms-tool
-# mkdir luci-app-sms-tool
-# cp -rf ../../Modem-Support/sms-tool/* sms-tool
-# cp -rf ../../Modem-Support/luci-app-sms-tool/* luci-app-sms-tool
-# cp -rf ../../MyConfig/configs/istoreos/general/applications/luci-app-sms-tool/* luci-app-sms-tool
-
-# 5G模组信息插件
-# svn export https://github.com/qiuweichao/luci-app-modem-info/trunk/luci-app-3ginfo-lite
-# svn export https://github.com/owner888/luci-app-3ginfo-zh_cn/trunk/3ginfo
-# svn export https://github.com/owner888/luci-app-3ginfo-zh_cn/trunk/luci-app-3ginfo
-
-# 5G模组信息插件+AT工具
-# mkdir luci-app-modem
-# cp -rf ../../Modem-Support/luci-app-modem/* luci-app-modem
-# rm -rf ../../Modem-Support/luci-app-modem/po/zh_Hans #解决汉化问题
-popd
-
-# 5G模组拨号脚本
-# mkdir -p package/base-files/files/root/5GModem
-# cp -rf $GITHUB_WORKSPACE/tools/5G模组拨号脚本/5GModem/* package/base-files/files/root/5GModem
-# echo -e "#* * * * * bash /root/5GModem/5g_crontab.sh" >> package/istoreos-files/files/etc/crontabs/root
-
-# 添加第三方应用
-echo "
-# 系统相关应用
-CONFIG_PACKAGE_luci-app-poweroff=y
-CONFIG_PACKAGE_luci-app-fileassistant=y
-# CONFIG_PACKAGE_luci-app-guest-wifi=y
-# CONFIG_PACKAGE_luci-app-wolplus=y
-# CONFIG_PACKAGE_luci-app-wifischedule=y
-CONFIG_PACKAGE_luci-app-ramfree=y
-# CONFIG_PACKAGE_luci-app-usb3disable=y
-CONFIG_PACKAGE_luci-app-luci-app-netdata=y
-CONFIG_PACKAGE_luci-app-luci-app-rtbwmon=y
-
-# 存储相关应用
-# CONFIG_PACKAGE_luci-app-gowebdav=y
-
-# 科学上网和代理应用
-#SSR
-# CONFIG_PACKAGE_luci-app-ssr-plus=y
-# CONFIG_PACKAGE_luci-app-ssr-plus_INCLUDE_Shadowsocks_NONE_Client=y
-# CONFIG_PACKAGE_luci-app-ssr-plus_INCLUDE_Shadowsocks_Libev_Client is not set
-# CONFIG_PACKAGE_luci-app-ssr-plus_INCLUDE_Shadowsocks_Rust_Client is not set
-# CONFIG_PACKAGE_luci-app-ssr-plus_INCLUDE_Shadowsocks_NONE_Server=y
-# CONFIG_PACKAGE_luci-app-ssr-plus_INCLUDE_Shadowsocks_Libev_Server is not set
-# CONFIG_PACKAGE_luci-app-ssr-plus_INCLUDE_Shadowsocks_Rust_Server is not set
-# CONFIG_PACKAGE_luci-app-ssr-plus_INCLUDE_NONE_V2RAY is not set
-# CONFIG_PACKAGE_luci-app-ssr-plus_INCLUDE_V2ray is not set
-# CONFIG_PACKAGE_luci-app-ssr-plus_INCLUDE_Xray=y
-# CONFIG_PACKAGE_luci-app-ssr-plus_INCLUDE_ChinaDNS_NG is not set
-# CONFIG_PACKAGE_luci-app-ssr-plus_INCLUDE_MosDNS=n
-# CONFIG_PACKAGE_luci-app-ssr-plus_INCLUDE_Hysteria is not set
-# CONFIG_PACKAGE_luci-app-ssr-plus_INCLUDE_Tuic_Client is not set
-# CONFIG_PACKAGE_luci-app-ssr-plus_INCLUDE_Shadow_TLS is not set
-# CONFIG_PACKAGE_luci-app-ssr-plus_INCLUDE_IPT2Socks is not set
-# CONFIG_PACKAGE_luci-app-ssr-plus_INCLUDE_Kcptun is not set
-# CONFIG_PACKAGE_luci-app-ssr-plus_INCLUDE_NaiveProxy is not set
-# CONFIG_PACKAGE_luci-app-ssr-plus_INCLUDE_Redsocks2 is not set
-# CONFIG_PACKAGE_luci-app-ssr-plus_INCLUDE_Shadowsocks_Simple_Obfs=n
-# CONFIG_PACKAGE_luci-app-ssr-plus_INCLUDE_Shadowsocks_V2ray_Plugin=n
-# CONFIG_PACKAGE_luci-app-ssr-plus_INCLUDE_ShadowsocksR_Libev_Client=n
-# CONFIG_PACKAGE_luci-app-ssr-plus_INCLUDE_ShadowsocksR_Libev_Server=n
-# CONFIG_PACKAGE_luci-app-ssr-plus_INCLUDE_Trojan is not set
-
-#Passwall和Passwall2
-# CONFIG_PACKAGE_luci-app-passwall2=y
-# CONFIG_PACKAGE_luci-app-passwall=y
-# CONFIG_PACKAGE_luci-app-passwall_Transparent_Proxy=y
-# CONFIG_PACKAGE_luci-app-passwall_INCLUDE_Brook=y
-# CONFIG_PACKAGE_luci-app-passwall_INCLUDE_ChinaDNS_NG=y
-# CONFIG_PACKAGE_luci-app-passwall_INCLUDE_Haproxy=y
-# CONFIG_PACKAGE_luci-app-passwall_INCLUDE_Hysteria=y
-# CONFIG_PACKAGE_luci-app-passwall_INCLUDE_IPv6_Nat=y
-# CONFIG_PACKAGE_luci-app-passwall_INCLUDE_Kcptun=y
-# CONFIG_PACKAGE_luci-app-passwall_INCLUDE_NaiveProxy=y
-# CONFIG_PACKAGE_luci-app-passwall_INCLUDE_Shadowsocks_Libev_Client=y
-# CONFIG_PACKAGE_luci-app-passwall_INCLUDE_Shadowsocks_Libev_Server=y
-# CONFIG_PACKAGE_luci-app-passwall_INCLUDE_Shadowsocks_Rust_Client=y
-# CONFIG_PACKAGE_luci-app-passwall_INCLUDE_Shadowsocks_Rust_Server=y
-# CONFIG_PACKAGE_luci-app-passwall_INCLUDE_ShadowsocksR_Libev_Client=y
-# CONFIG_PACKAGE_luci-app-passwall_INCLUDE_ShadowsocksR_Libev_Server=y
-# CONFIG_PACKAGE_luci-app-passwall_INCLUDE_Simple_Obfs=y
-# CONFIG_PACKAGE_luci-app-passwall_INCLUDE_SingBox=y
-# CONFIG_PACKAGE_luci-app-passwall_INCLUDE_Trojan_GO=y
-# CONFIG_PACKAGE_luci-app-passwall_INCLUDE_Trojan_Plus=y
-# CONFIG_PACKAGE_luci-app-passwall_INCLUDE_V2ray=y
-# CONFIG_PACKAGE_luci-app-passwall_INCLUDE_V2ray_Plugin=y
-# CONFIG_PACKAGE_luci-app-passwall_INCLUDE_Xray=y
-# CONFIG_PACKAGE_luci-app-passwall_INCLUDE_Xray_Plugin=y
-# CONFIG_PACKAGE_luci-app-haproxy-tcp=y
-
-#VSSR（HelloWord）
-# CONFIG_PACKAGE_luci-app-vssr=y
-# CONFIG_PACKAGE_luci-app-vssr_INCLUDE_Xray=y
-# CONFIG_PACKAGE_luci-app-vssr_INCLUDE_Trojan=y
-# CONFIG_PACKAGE_luci-app-vssr_INCLUDE_Kcptun=y
-# CONFIG_PACKAGE_luci-app-vssr_INCLUDE_Xray_plugin=y
-# CONFIG_PACKAGE_luci-app-vssr_INCLUDE_ShadowsocksR_Server=y
-
-#Openclash
-# CONFIG_PACKAGE_luci-app-openclash=y
-# CONFIG_PACKAGE_luci-app-homeproxy=y
-
-# 去广告应用
-# CONFIG_PACKAGE_luci-app-adguardhome=y
-# CONFIG_PACKAGE_luci-app-dnsfilter=y
-# CONFIG_PACKAGE_luci-app-ikoolproxy=y
-
-# docker应用
-# CONFIG_PACKAGE_luci-app-aliyundrive-webdav=y
-# CONFIG_PACKAGE_luci-app-aria2=y
-# CONFIG_PACKAGE_luci-app-transmission=y
-# CONFIG_PACKAGE_luci-app-qbittorrent=y
-# CONFIG_PACKAGE_luci-app-qbittorrent_static=y
-# CONFIG_PACKAGE_luci-app-alist=y
-# CONFIG_PACKAGE_luci-app-filebrowser=y
-# CONFIG_PACKAGE_luci-app-familycloud=y
-# CONFIG_PACKAGE_luci-app-kodexplorer=y
-# CONFIG_PACKAGE_luci-app-rclone=y
-
-# 局域网分享应用
-# CONFIG_PACKAGE_luci-app-minidlna=y
-# CONFIG_PACKAGE_luci-app-airplay2=y
-# CONFIG_PACKAGE_luci-app-shairplay=y
-# CONFIG_PACKAGE_luci-app-music-remote-center=y
-# CONFIG_PACKAGE_luci-app-mjpg-streamer=y
-# CONFIG_PACKAGE_luci-app-ps3netsrv=y
-# CONFIG_PACKAGE_luci-app-usb-printer=y
-
-# VPN服务器
-# CONFIG_PACKAGE_luci-app-brook-server=y
-# CONFIG_PACKAGE_luci-app-ssr-mudb-server=y
-# CONFIG_PACKAGE_luci-app-trojan-server=y
-# CONFIG_PACKAGE_luci-app-openvpn-server=y
-# CONFIG_PACKAGE_luci-app-pptp-server=y
-# CONFIG_PACKAGE_luci-app-softethervpn=y
-
-# DNS
-# CONFIG_PACKAGE_luci-app-mosdns=y
-# CONFIG_PACKAGE_luci-app-smartdns=y
-
-# DDNS
-# CONFIG_PACKAGE_luci-app-aliddns=y
-# CONFIG_PACKAGE_luci-app-tencentddns=y
-
-# 内网穿透
-# CONFIG_PACKAGE_luci-app-zerotier=y
-# CONFIG_PACKAGE_luci-app-frpc=y
-# CONFIG_PACKAGE_luci-app-frps=y
-# CONFIG_PACKAGE_luci-app-nps=y
-# CONFIG_PACKAGE_luci-app-n2n_v2=y
-
-# 其他
-# CONFIG_PACKAGE_luci-app-pushbot=y
-# CONFIG_PACKAGE_luci-app-socat=y
-# CONFIG_PACKAGE_luci-app-unblockneteasemusic=y
-# CONFIG_PACKAGE_luci-app-uugamebooster=y
-# CONFIG_PACKAGE_luci-app-wifischedule=y
-# CONFIG_PACKAGE_luci-app-xlnetacc=y
-# CONFIG_PACKAGE_luci-udptools=y
-" >> .config
-
-#补充网卡
-echo "
-CONFIG_PACKAGE_kmod-mt7922-firmware=y
-CONFIG_PACKAGE_kmod-ath=y
-CONFIG_PACKAGE_kmod-ath10k=y
-CONFIG_PACKAGE_ath10k-board-qca9888=y
-CONFIG_PACKAGE_ath10k-board-qca988x=y
-CONFIG_PACKAGE_ath10k-board-qca9984=y
-CONFIG_PACKAGE_ath10k-firmware-qca9888=y
-CONFIG_PACKAGE_ath10k-firmware-qca988x=y
-CONFIG_PACKAGE_ath10k-firmware-qca9984=y
-" >> .config
-
-#5G相关
-echo "
-# 5G模组信号插件
-# CONFIG_PACKAGE_ext-rooter-basic=y
-
-# 5G模组短信插件
-# CONFIG_PACKAGE_luci-app-sms-tool=y
-
-# 5G模组信息插件
-# CONFIG_PACKAGE_luci-app-3ginfo-lite=y
-# CONFIG_PACKAGE_luci-app-3ginfo=y
-
-# 5G模组信息插件+AT工具
-# CONFIG_PACKAGE_luci-app-cpe=y
-# CONFIG_PACKAGE_sendat=y
-# CONFIG_PACKAGE_sms-tool=y
-# CONFIG_PACKAGE_luci-app-modem=y
-
-# QMI拨号工具（移远，广和通）
-# CONFIG_PACKAGE_quectel-CM-5G=y
-# CONFIG_PACKAGE_fibocom-dial=y
-
-# QMI拨号软件
-# CONFIG_PACKAGE_kmod-qmi_wwan_f=y
-# CONFIG_PACKAGE_luci-app-hypermodem=y
-
-# Gobinet拨号软件
-# CONFIG_PACKAGE_kmod-gobinet=y
-# CONFIG_PACKAGE_luci-app-gobinetmodem=y
-
-# 串口调试工具
-# CONFIG_PACKAGE_minicom=y
-
-# 脚本拨号工具依赖
-# CONFIG_PACKAGE_procps-ng=y
-# CONFIG_PACKAGE_procps-ng-ps=y
-" >> .config
-
-# 额外组件
-echo "
-CONFIG_GRUB_IMAGES=y
-CONFIG_VMDK_IMAGES=y
-# CONFIG_ISO_IMAGES=y
-CONFIG_QCOW2_IMAGES=y
-" >> .config
+# NTP
+sed -i 's/0.openwrt.pool.ntp.org/ntp1.aliyun.com/g' package/base-files/files/bin/config_generate
+sed -i 's/1.openwrt.pool.ntp.org/ntp2.aliyun.com/g' package/base-files/files/bin/config_generate
+sed -i 's/2.openwrt.pool.ntp.org/time1.cloud.tencent.com/g' package/base-files/files/bin/config_generate
+sed -i 's/3.openwrt.pool.ntp.org/time2.cloud.tencent.com/g' package/base-files/files/bin/config_generate
 
 # ZeroWrt选项菜单
 mkdir -p files/bin
@@ -474,31 +114,13 @@ chmod +x files/bin/ZeroWrt
 mkdir -p files/root
 curl -L -o files/root/version.txt https://git.kejizero.online/zhao/files/raw/branch/main/bin/version.txt
 chmod +x files/root/version.txt
-cat .config
 
-# 添加设备
-if [ "$1" = "rk33xx" ]; then
-    sed -i "s/# CONFIG_TARGET_DEVICE_rockchip_armv8_DEVICE_armsom_p2-pro is not set/CONFIG_TARGET_DEVICE_rockchip_armv8_DEVICE_armsom_p2-pro=y/g" .config
-    sed -i "s/# CONFIG_TARGET_DEVICE_rockchip_armv8_DEVICE_pine64_rockpro64 is not set/CONFIG_TARGET_DEVICE_rockchip_armv8_DEVICE_pine64_rockpro64=y/g" .config
-    sed -i "s/# CONFIG_TARGET_DEVICE_rockchip_armv8_DEVICE_radxa_rock-pi-4a is not set/CONFIG_TARGET_DEVICE_rockchip_armv8_DEVICE_radxa_rock-pi-4a=y/g" .config
-    sed -i "s/# CONFIG_TARGET_DEVICE_rockchip_armv8_DEVICE_rockchip_rk3308_evb is not set/CONFIG_TARGET_DEVICE_rockchip_armv8_DEVICE_rockchip_rk3308_evb=y/g" .config
-elif [ "$1" = "rk35xx" ]; then
-    sed -i "s/# CONFIG_TARGET_DEVICE_rockchip_rk35xx_DEVICE_armsom_sige1 is not set/CONFIG_TARGET_DEVICE_rockchip_rk35xx_DEVICE_armsom_sige1=y/g" .config
-    sed -i "s/# CONFIG_TARGET_DEVICE_rockchip_rk35xx_DEVICE_armsom_sige7-v1 is not set/CONFIG_TARGET_DEVICE_rockchip_rk35xx_DEVICE_armsom_sige7-v1=y/g" .config
-    sed -i "s/# CONFIG_TARGET_DEVICE_rockchip_rk35xx_DEVICE_cyber3588_aib is not set/CONFIG_TARGET_DEVICE_rockchip_rk35xx_DEVICE_cyber3588_aib=y/g" .config
-    sed -i "s/# CONFIG_TARGET_DEVICE_rockchip_rk35xx_DEVICE_dg_nas-lite is not set/CONFIG_TARGET_DEVICE_rockchip_rk35xx_DEVICE_dg_nas-lite=y/g" .config
-    sed -i "s/# CONFIG_TARGET_DEVICE_rockchip_rk35xx_DEVICE_fastrhino_r66s is not set/CONFIG_TARGET_DEVICE_rockchip_rk35xx_DEVICE_fastrhino_r66s=y/g" .config
-    sed -i "s/# CONFIG_TARGET_DEVICE_rockchip_rk35xx_DEVICE_fastrhino_r68s is not set/CONFIG_TARGET_DEVICE_rockchip_rk35xx_DEVICE_fastrhino_r68s=y/g" .config
-    sed -i "s/# CONFIG_TARGET_DEVICE_rockchip_rk35xx_DEVICE_hinlink_hnas is not set/CONFIG_TARGET_DEVICE_rockchip_rk35xx_DEVICE_hinlink_hnas=y/g" .config
-    sed -i "s/# CONFIG_TARGET_DEVICE_rockchip_rk35xx_DEVICE_idiskk_h1 is not set/CONFIG_TARGET_DEVICE_rockchip_rk35xx_DEVICE_idiskk_h1=y/g" .config
-    sed -i "s/# CONFIG_TARGET_DEVICE_rockchip_rk35xx_DEVICE_inspur_ihec301 is not set/CONFIG_TARGET_DEVICE_rockchip_rk35xx_DEVICE_inspur_ihec301=y/g" .config
-    sed -i "s/# CONFIG_TARGET_DEVICE_rockchip_rk35xx_DEVICE_jp_tvbox is not set/CONFIG_TARGET_DEVICE_rockchip_rk35xx_DEVICE_jp_tvbox=y/g" .config
-    sed -i "s/# CONFIG_TARGET_DEVICE_rockchip_rk35xx_DEVICE_jsy_h1 is not set/CONFIG_TARGET_DEVICE_rockchip_rk35xx_DEVICE_jsy_h1=y/g" .config
-    sed -i "s/# CONFIG_TARGET_DEVICE_rockchip_rk35xx_DEVICE_le_hes30 is not set/CONFIG_TARGET_DEVICE_rockchip_rk35xx_DEVICE_le_hes30=y/g" .config
-    sed -i "s/# CONFIG_TARGET_DEVICE_rockchip_rk35xx_DEVICE_panther_x2 is not set/CONFIG_TARGET_DEVICE_rockchip_rk35xx_DEVICE_panther_x2=y/g" .config
-    sed -i "s/# CONFIG_TARGET_DEVICE_rockchip_rk35xx_DEVICE_roc_k50s is not set/CONFIG_TARGET_DEVICE_rockchip_rk35xx_DEVICE_roc_k50s=y/g" .config
-    sed -i "s/# CONFIG_TARGET_DEVICE_rockchip_rk35xx_DEVICE_ynn_ynnnas is not set/CONFIG_TARGET_DEVICE_rockchip_rk35xx_DEVICE_ynn_ynnnas=y/g" .config
-    sed -i "s/# CONFIG_TARGET_DEVICE_rockchip_rk35xx_DEVICE_yyy_h1 is not set/CONFIG_TARGET_DEVICE_rockchip_rk35xx_DEVICE_yyy_h1=y/g" .config
-fi
+# swapp
+mkdir -p files/etc/sysctl.d
+curl -L -o files/etc/sysctl.d/15-vm-swappiness.conf https://raw.githubusercontent.com/oppen321/ZeroWrt/refs/heads/master/files/15-vm-swappiness.conf
+curl -L -o files/etc/sysctl.d/16-udp-buffer-size.conf https://raw.githubusercontent.com/oppen321/ZeroWrt/refs/heads/master/files/16-udp-buffer-size.conf
+chmod +x files/etc/sysctl.d/15-vm-swappiness.conf
+chmod +x files/etc/sysctl.d/16-udp-buffer-size.conf
 
-cat .config
+./scripts/feeds update -a
+./scripts/feeds install -a
