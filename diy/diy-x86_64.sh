@@ -135,7 +135,7 @@ git clone --depth=1 -b 24.x https://github.com/sbwml/packages_lang_golang feeds/
 
 # quickstart插件
 
-git clone -b main --depth 1 https://github.com/lq-wq/luci-app-quickstart.git package/app/luci-app-quickstart
+git clone --depth=1  https://github.com/kiddin9/kwrt-packages/tree/main/luci-app-quickstart package/app/luci-app-quickstart
 
 # 加载软件源
 git clone --depth=1 https://github.com/oppen321/openwrt-package package/openwrt-package
