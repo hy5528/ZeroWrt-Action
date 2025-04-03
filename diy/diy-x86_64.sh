@@ -138,7 +138,9 @@ git clone --depth=1 -b 24.x https://github.com/sbwml/packages_lang_golang feeds/
 # 加载软件源
 git clone --depth=1 https://github.com/oppen321/openwrt-package package/openwrt-package
 
-
+# 增加软件包
+sed -i '$a src-git nas https://github.com/linkease/nas-packages.git;master' feeds.conf.default
+sed -i '$a src-git nas_luci https://github.com/linkease/nas-packages-luci.git;main' feeds.conf.default
 
 # Docker
 rm -rf feeds/luci/applications/luci-app-dockerman
