@@ -68,10 +68,8 @@ function git_sparse_clone() {
 git clone https://git.kejizero.online/zhao/packages_lang_golang -b 23.x feeds/packages/lang/golang
 
 # partexp分区、扩容
-# git clone https://github.com/sirpdboy/luci-app-partexp.git package/luci-app-partexp
+git clone https://github.com/sirpdboy/luci-app-partexp.git package/luci-app-partexp
 
-# 加载软件源
-git clone --depth=1 https://github.com/oppen321/openwrt-package package/openwrt-package
 
 # SSRP & Passwall
 # git clone https://git.kejizero.online/zhao/openwrt_helloworld.git package/helloworld -b v5
